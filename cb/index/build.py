@@ -18,7 +18,7 @@ from ..config import Config
 from ..records import question as qmod
 from ..records.interview import load as load_interview
 from ..ingest import ANNOTATION_PROMPT
-from ..wiki import frontmatter, graph as wikigraph, managed
+from ..wiki import frontmatter, graph as wikigraph, managed, methods as methods_mod
 
 SCHEMA = """
 DROP TABLE IF EXISTS nodes;
@@ -41,8 +41,8 @@ CREATE TABLE edges (
 CREATE TABLE questions (
     id TEXT PRIMARY KEY, slug TEXT, question TEXT, asked_by TEXT, asked_on TEXT,
     last_activity TEXT, status TEXT, graph TEXT, treatment TEXT, outcome TEXT,
-    treatment_kind TEXT, verdict TEXT, method TEXT, effect TEXT, finding TEXT,
-    abandoned_reason TEXT, dir TEXT
+    treatment_kind TEXT, verdict TEXT, method TEXT, method_note TEXT, effect TEXT,
+    finding TEXT, abandoned_reason TEXT, dir TEXT
 );
 CREATE TABLE effects (
     question_id TEXT, treatment TEXT, outcome TEXT, method TEXT,
@@ -154,14 +154,19 @@ def _index_graph(con, cfg: Config) -> None:
 
 
 def _index_questions(con, cfg: Config, docs: _Docs) -> None:
+    notes = methods_mod.load(cfg)
     for q in qmod.iter_questions(cfg.questions):
+        # Which method note covers this question, if any. Matched here rather
+        # than in SQL so "estimated with something nobody wrote up" is one query.
+        note = methods_mod.match(notes, q.method or "")
         con.execute(
-            "INSERT INTO questions VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+            "INSERT INTO questions VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
             [
                 q.id, q.slug, q.question, q.asked_by, q.asked_on, q.last_activity,
                 q.status.value, q.graph or "", _join(q.treatment), _join(q.outcome),
-                q.treatment_kind or "", q.verdict or "", q.method or "", q.effect or "",
-                q.finding or "", q.abandoned_reason or "", str(q.dir or ""),
+                q.treatment_kind or "", q.verdict or "", q.method or "",
+                note.id if note else "", q.effect or "", q.finding or "",
+                q.abandoned_reason or "", str(q.dir or ""),
             ],
         )
         if q.verdict or q.effect or q.finding:
@@ -209,6 +214,7 @@ def _index_prose(con, cfg: Config, docs: _Docs) -> None:
     for kind, directory in (
         ("experiment", cfg.experiments_dir),
         ("process", cfg.process_dir),
+        ("method", cfg.methods_dir),
         ("trap", cfg.traps_dir),
         ("rule", cfg.rules_dir),
     ):

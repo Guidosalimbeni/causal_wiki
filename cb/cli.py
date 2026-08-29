@@ -27,6 +27,7 @@ from .records import question as qmod
 from .records import result as result_mod
 from .wiki import backlinks as backlinks_mod
 from .wiki import graph as wikigraph
+from .wiki import methods as methods_mod
 
 app = typer.Typer(add_completion=False, help=__doc__, no_args_is_help=True)
 graph_app = typer.Typer(help="Inspect the causal graph.", no_args_is_help=True)
@@ -77,6 +78,8 @@ def init(
     echo(f"initialised cb project at {root}")
     _report_templates(written)
     echo()
+    echo("CLAUDE.md is the standing context Claude Code reads on every session; "
+         "skills/ is the judgement layer. Both are yours to edit.")
     echo("Next: drop material into raw/ and run /cb:ingest in Claude Code.")
 
 
@@ -89,6 +92,20 @@ def sync(
     _report_templates(
         templates_mod.materialise(c.root, force=force, groups=templates_mod.SYNCED)
     )
+    # Never with `force`: a project's CLAUDE.md is its own, and sync must not be
+    # able to take it back. But a *missing* one is not an edit, it is the
+    # always-on context absent — and the whole judgement layer assumes it is there.
+    restored = [
+        w
+        for w in templates_mod.materialise(c.root, groups=[templates_mod.PROJECT])
+        if w.action == "created"
+    ]
+    for w in restored:
+        echo(f"  {w}")
+    if restored:
+        echo()
+        echo("CLAUDE.md was missing — written back. It is the standing context that "
+             "tells Claude this is causal work; without it the skills are half the tool.")
 
 
 def _report_templates(written: list) -> None:
@@ -211,6 +228,7 @@ def context(
         ("Tables", c.tables_dir),
         ("Rules (these decide who gets treated)", c.rules_dir),
         ("Process", c.process_dir),
+        ("Methods used here", c.methods_dir),
         ("Experiments", c.experiments_dir),
         ("Traps", c.traps_dir),
     ):
@@ -456,6 +474,45 @@ def sql(statement: str = typer.Argument(..., help="Read-only SQL over the index.
 
 
 # -- validation ---------------------------------------------------------------
+
+
+@app.command()
+def methods() -> None:
+    """What this company has estimated with before, and how often.
+
+    The textbook is already in the model. This is the local record: which of
+    them survived contact with this business, and which were tried with nothing
+    written down about how they had to be bent.
+    """
+    c = cfg()
+    notes = methods_mod.load(c)
+    questions = [q for q in qmod.iter_questions(c.questions) if q.method]
+
+    used: dict[str, list] = {}
+    unwritten: dict[str, list] = {}
+    for q in questions:
+        note = methods_mod.match(notes, q.method or "")
+        if note:
+            used.setdefault(note.id, []).append(q)
+        else:
+            unwritten.setdefault(q.method or "", []).append(q)
+
+    if notes:
+        echo("## Written up")
+        for note in notes:
+            ids = ", ".join(q.id for q in sorted(used.get(note.id, []), key=lambda q: q.id))
+            echo(f"  {note.id:34s} {len(used.get(note.id, [])):2d}  {ids or '—'}")
+    else:
+        echo(f"nothing in {c.methods_dir.relative_to(c.root)} yet")
+
+    if unwritten:
+        echo()
+        echo("## Used but never written up")
+        for method, qs in sorted(unwritten.items()):
+            echo(f"  {method:34s} {len(qs):2d}  {', '.join(q.id for q in qs)}")
+        echo()
+        echo("Each of these was tailored to this business somehow. Write that down in "
+             f"{c.methods_dir.relative_to(c.root)}/ — skills/methods.md has the shape.")
 
 
 @app.command()

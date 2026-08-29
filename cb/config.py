@@ -43,6 +43,14 @@ class Config:
         return self.wiki / "process"
 
     @property
+    def methods_dir(self) -> Path:
+        """How this company estimates things. Not the textbook — IV and DiD are
+        in the model's training data already. What is written here is the local
+        tailoring: which instrument held up, which window, which cohort, and
+        what went wrong last time."""
+        return self.wiki / "methods"
+
+    @property
     def traps_dir(self) -> Path:
         return self.wiki / "traps"
 
@@ -78,6 +86,7 @@ class Config:
             self.graph_dir,
             self.tables_dir,
             self.process_dir,
+            self.methods_dir,
             self.experiments_dir,
             self.traps_dir,
             self.rules_dir,

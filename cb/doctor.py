@@ -32,9 +32,31 @@ class Finding:
 
 def check(cfg: Config) -> list[Finding]:
     out: list[Finding] = []
+    out += _check_scaffold(cfg)
     out += _check_graph(cfg)
     out += _check_questions(cfg)
     out += _check_tables(cfg)
+    return out
+
+
+def _check_scaffold(cfg: Config) -> list[Finding]:
+    """The standing context is markdown, so its absence is silent.
+
+    A project with the CLI but no CLAUDE.md still runs every command and still
+    answers — just without the context that makes it causal work rather than a
+    query tool. Nothing else would ever report that. `skills/` is deliberately
+    not checked: it may legitimately live a level up, shared across projects.
+    """
+    out: list[Finding] = []
+    if not (cfg.root / "CLAUDE.md").exists():
+        out.append(
+            Finding(
+                "warn",
+                "no-standing-context",
+                "no CLAUDE.md — Claude Code has nothing telling it this is a causal "
+                "wiki. `cb sync` writes the shipped one back.",
+            )
+        )
     return out
 
 

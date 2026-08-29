@@ -27,6 +27,7 @@ attributed to whoever said it. A claim in prose is not an edge.
 | "the add-on only shows when lead time > 60" | `wiki/rules/<slug>.md` — **and see below** |
 | how the business works, in prose | `wiki/process/<slug>.md` |
 | an old experiment and what it found | `wiki/experiments/<slug>.md` |
+| how this company estimates something, and its local caveats | `wiki/methods/<slug>.md` |
 | a mistake that keeps getting made | `wiki/traps/<slug>.md` |
 | a variable worth reasoning about | `wiki/graph/<id>.md` — nodes only, no edges yet |
 

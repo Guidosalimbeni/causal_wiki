@@ -91,6 +91,15 @@ GAP_QUERIES: list[tuple[str, str, str]] = [
            ORDER BY q.id""",
     ),
     (
+        "method-without-a-note",
+        "Estimated with, but nothing in wiki/methods/ says how it had to be tailored here. "
+        "The textbook is not the missing part; the local shape of it is.",
+        """SELECT method, 'used by ' || string_agg(id, ', ' ORDER BY id)
+           FROM questions
+           WHERE COALESCE(method,'') <> '' AND COALESCE(method_note,'') = ''
+           GROUP BY method ORDER BY 1""",
+    ),
+    (
         "abandoned-without-reason",
         "Abandoned with no reason recorded. These are the ones worth learning from.",
         """SELECT id, question FROM questions

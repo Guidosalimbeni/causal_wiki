@@ -18,11 +18,12 @@ from pathlib import Path
 
 from ..config import Config
 from ..records import question as qmod
-from . import managed
+from . import managed, methods as methods_mod
 from .graph import Wiki
 
 REGION = "questions"
 HEADING = "## Questions asked here"
+METHOD_HEADING = "## Questions that used this"
 
 
 def _line(node_id: str, q: qmod.Question, from_dir: Path) -> str:
@@ -48,6 +49,64 @@ def render(node_id: str, questions: list[qmod.Question], from_dir: Path) -> str:
     return f"{HEADING}\n\n{body}"
 
 
+def _method_line(q: qmod.Question, from_dir: Path) -> str:
+    target = os.path.relpath(q.path, from_dir).replace(os.sep, "/")
+    parts = [q.status.value]
+    if q.verdict:
+        parts.append(q.verdict)
+    line = f"- [{q.id}]({target}) — `{q.method}` — {' · '.join(parts)} — {q.question}"
+    if q.finding:
+        line += f"\n  {q.finding}"
+    return line
+
+
+def _write(path: Path, content: str | None) -> bool:
+    before = path.read_text(encoding="utf-8")
+    after = (
+        managed.replace(before, content, name=REGION)
+        if content
+        else managed.remove(before, name=REGION)
+    )
+    if after == before:
+        return False
+    path.write_text(after, encoding="utf-8")
+    return True
+
+
+def update_methods(cfg: Config) -> list[Path]:
+    """List, on each method note, the questions estimated with it.
+
+    Which is the point of the folder: "what have we used for this kind of
+    treatment before, and how did it have to be bent" is the first thing worth
+    knowing in an interview, and it is unanswerable if the note and the
+    questions never point at each other.
+    """
+    notes = methods_mod.load(cfg)
+    if not notes:
+        return []
+    used: dict[str, list[qmod.Question]] = {}
+    for q in qmod.iter_questions(cfg.questions):
+        note = methods_mod.match(notes, q.method or "")
+        if note:
+            used.setdefault(note.id, []).append(q)
+
+    changed: list[Path] = []
+    for note in notes:
+        if note.path is None:
+            continue
+        questions = sorted(used.get(note.id, []), key=lambda q: q.id)
+        content = (
+            METHOD_HEADING
+            + "\n\n"
+            + "\n".join(_method_line(q, note.path.parent) for q in questions)
+            if questions
+            else None
+        )
+        if _write(note.path, content):
+            changed.append(note.path)
+    return changed
+
+
 def update(cfg: Config, wiki: Wiki) -> list[Path]:
     """Refresh the backlink region on every node file. Returns what changed."""
     by_node: dict[str, list[qmod.Question]] = {}
@@ -62,16 +121,10 @@ def update(cfg: Config, wiki: Wiki) -> list[Path]:
         if node.path is None:
             continue
         path = Path(node.path)
-        before = path.read_text(encoding="utf-8")
         asked = by_node.get(node_id, [])
         # A node nobody has asked about carries no block at all, rather than an
         # empty one in every file.
-        after = (
-            managed.replace(before, render(node_id, asked, path.parent), name=REGION)
-            if asked
-            else managed.remove(before, name=REGION)
-        )
-        if after != before:
-            path.write_text(after, encoding="utf-8")
+        content = render(node_id, asked, path.parent) if asked else None
+        if _write(path, content):
             changed.append(path)
-    return changed
+    return changed + update_methods(cfg)

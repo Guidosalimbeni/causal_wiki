@@ -14,6 +14,9 @@ the method, and the finding in one sentence a business reader would understand.
 - A column that is not what its name says → its causal annotation.
 - A rule nobody had written down → `wiki/rules/`.
 - A mistake that would be easy to repeat → `wiki/traps/`.
+- How the method had to be bent to fit this business → `wiki/methods/`.
+  Not the textbook — the trimming rule, the window, the cohort you could not
+  build. Add to the existing note if there is one.
 - An edge the data confirmed or contradicted → the node file, with the
   reasoning updated and `confirmed_by` set to whoever agreed.
 

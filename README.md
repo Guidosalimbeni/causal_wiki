@@ -73,9 +73,32 @@ wiki/
   graph/         one file per variable — the causal graph
   rules/         business rules — these decide who gets treated
   process/       how the business actually works, in prose
+  methods/       how this company estimates things — the local tailoring
   experiments/   what was tried and what it found
   traps/         mistakes that keep getting made here
 ```
+
+### `methods/` holds the tailoring, not the textbook
+
+IV, DiD, synthetic control, interrupted time series — the model already knows
+all of them, and restating them here would be the least useful thing this wiki
+could hold. What is nowhere in its training is how each had to be bent to fit
+*this* business: which instrument survived scrutiny, which window the billing
+cycle forces, why the obvious cohort definition is unavailable, what broke last
+time.
+
+Methods repeat far more than questions do. The same weighting approach comes
+back for every treatment gated by an eligibility rule, so the note accretes and
+the fourth question to use it is where it gets good.
+
+```bash
+cb methods    # what has been used here, how often, and what was never written up
+```
+
+`cb index` lists the questions that used each note on the note itself, and
+`cb gaps` reports a method used with nothing written down about it. Kept
+separate from `experiments/`, which records one thing that was run and what it
+found — a claim with a date on it, rather than standing guidance.
 
 ### The graph lives in the wiki, one file per node
 
@@ -215,6 +238,7 @@ not the directory tree's:
 
 ```bash
 cb status                     # what is open, freshest first; --all for the archive
+cb methods                    # what this company has estimated with before
 cb find "add-on churn"        # ranked, and the terms need not sit next to each other
 cb context <qid>              # priors ranked by shared variables, tail counted
 ```
