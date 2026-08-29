@@ -1,19 +1,19 @@
 ---
 id: q-0001
 status: concluded
-method: backdoor.propensity_score_weighting
-treatment_kind: ui_impression
-effect: '-2.1pp (95% CI -3.5 to -0.8)'
-finding: Showing the add-on reduces 90-day cancellation by about 2 percentage points.
 asked_by: guido
 asked_on: '2026-08-29'
+effect: -2.1pp (95% CI -3.5 to -0.8)
+finding: Showing the add-on reduces 90-day cancellation by about 2 percentage points.
 graph: addon_uptake
+method: backdoor.propensity_score_weighting
 outcome:
 - churn_90d
 question: Does showing the flexible-dates add-on actually reduce cancellations?
 slug: showing-flexible-dates-add-on
 treatment:
 - addon_shown
+treatment_kind: ui_impression
 verdict: IDENTIFIED
 ---
 

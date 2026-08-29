@@ -16,6 +16,7 @@ import typer
 
 from . import doctor as doctor_mod
 from . import ingest as ingest_mod
+from . import templates as templates_mod
 from .config import Config, load as load_config
 from .identify import engine
 from .index import build as index_build
@@ -57,8 +58,9 @@ def cfg() -> Config:
 @app.command()
 def init(
     path: Path = typer.Argument(Path("."), help="Where to create the project."),
+    force: bool = typer.Option(False, "--force", help="Replace skills you have edited."),
 ) -> None:
-    """Create the wiki skeleton."""
+    """Create the wiki skeleton, the skills and the slash commands."""
     root = Path(path).resolve()
     c = Config(root=root)
     for directory in c.dirs():
@@ -68,7 +70,34 @@ def init(
     if not gitignore.exists() or line not in gitignore.read_text(encoding="utf-8"):
         with gitignore.open("a", encoding="utf-8") as fh:
             fh.write(f"\n# cb: derived index, rebuilt by `cb index`\n{line}")
+
+    written = templates_mod.materialise(root, force=force)
     echo(f"initialised cb project at {root}")
+    _report_templates(written)
+    echo()
+    echo("Next: drop material into raw/ and run /cb:ingest in Claude Code.")
+
+
+@app.command()
+def sync(
+    force: bool = typer.Option(False, "--force", help="Replace skills you have edited."),
+) -> None:
+    """Refresh the shipped skills and slash commands after upgrading cb."""
+    c = cfg()
+    _report_templates(templates_mod.materialise(c.root, force=force))
+
+
+def _report_templates(written: list) -> None:
+    kept = [w for w in written if w.action == "kept"]
+    for w in written:
+        if w.action != "unchanged":
+            echo(f"  {w}")
+    if kept:
+        echo()
+        echo(
+            f"{len(kept)} file(s) you had edited were left alone. The skills are meant "
+            f"to be changed — pass --force only if you want the shipped versions back."
+        )
 
 
 # -- stage one: collecting ----------------------------------------------------

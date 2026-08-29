@@ -131,3 +131,31 @@ def test_init_creates_a_working_project(tmp_path):
     assert (root / "wiki" / "graph").is_dir()
     assert ".cb/" in (root / ".gitignore").read_text()
     assert "✓ clean" in cb("doctor", cwd=root)
+
+
+def test_init_ships_the_judgement_layer(tmp_path):
+    """A project with the CLI but no skills is only half the tool."""
+    cb("init", str(tmp_path / "new"), cwd=tmp_path)
+    root = tmp_path / "new"
+    assert (root / "skills" / "interview.md").read_text().strip()
+    assert (root / ".claude" / "commands" / "cb" / "ask.md").read_text().strip()
+
+
+def test_sync_refreshes_an_existing_project(tmp_path):
+    root = tmp_path / "new"
+    cb("init", str(root), cwd=tmp_path)
+    (root / "skills" / "interview.md").unlink()
+    cb("sync", cwd=root)
+    assert (root / "skills" / "interview.md").exists()
+
+
+def test_init_does_not_clobber_an_edited_skill(tmp_path):
+    root = tmp_path / "new"
+    cb("init", str(root), cwd=tmp_path)
+    skill = root / "skills" / "interview.md"
+    skill.write_text("my own house rules\n")
+
+    out = cb("init", str(root), cwd=tmp_path)
+
+    assert skill.read_text() == "my own house rules\n"
+    assert "kept" in out

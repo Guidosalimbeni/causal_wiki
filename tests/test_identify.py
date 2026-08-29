@@ -134,3 +134,26 @@ class TestRefusalContract:
             r = verdict_for(edges, observed=observed)
             assert not r.identified
             assert r.design_alternative.strip()
+
+
+def test_strategy_variables_are_deterministic():
+    """DoWhy's ordering is not stable across runs.
+
+    An adjustment set is a set, so order carries no meaning — but an unsorted
+    one makes identification.json and the generated notebook differ on every
+    re-run, which is noise in git and breaks reproducibility of a notebook.
+    """
+    edges = [("w1", "t"), ("w1", "y"), ("w2", "t"), ("w2", "y"), ("t", "y")]
+    runs = {
+        tuple(
+            next(
+                s
+                for s in verdict_for(
+                    edges, observed={"w1", "w2", "t", "y"}, treatment="t", outcome="y"
+                ).strategies
+                if s.kind == "backdoor"
+            ).variables
+        )
+        for _ in range(5)
+    }
+    assert runs == {("w1", "w2")}

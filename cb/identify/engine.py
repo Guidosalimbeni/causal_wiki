@@ -65,7 +65,10 @@ def _strategy_variables(estimand, kind: str) -> list[str]:
         value = getattr(estimand, getter)()
     except Exception:
         return []
-    return [str(v) for v in (value or [])]
+    # Sorted because DoWhy's ordering is not stable across runs: an adjustment
+    # set is a set, so the order carries no meaning, but an unsorted one makes
+    # identification.json and the generated notebook differ on every re-run.
+    return sorted(str(v) for v in (value or []))
 
 
 def _assumptions(estimands: dict, key: str, targets: list[str]) -> dict[str, str]:

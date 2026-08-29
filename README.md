@@ -15,6 +15,9 @@ driven from Claude Code, where the judgement happens.
 | **`skills/`** — prose | the interview, routing, critique, proposing edges, choosing methods, writing up |
 | **`.claude/commands/cb/`** | the actual entry points: `/cb:ingest`, `/cb:ask`, `/cb:resume`, `/cb:gaps` |
 
+Both halves ship with the library. `cb init` writes the skills and slash
+commands into your project; the shipped copies live in `cb/templates/`.
+
 `cb ask` opens a record and assembles context; it does not conduct the
 interview. That happens in the conversation, which is the only place it can.
 
@@ -33,10 +36,22 @@ Every question gets an id and all five stages hang off it, in
 
 ## Install
 
+Into a new, empty repo:
+
 ```bash
-pip install -e .
-cb init .
+cd your-repo
+python3 -m venv .venv
+.venv/bin/pip install /path/to/causal_wiki
+.venv/bin/cb init .
 ```
+
+`cb init` creates the wiki skeleton **and** writes out `skills/` and
+`.claude/commands/cb/`, so the slash commands work immediately. It never
+overwrites a skill you have edited — the skills are meant to be changed. After
+upgrading `cb`, `cb sync` pulls in any new or changed templates, again leaving
+your edits alone (`--force` if you want the shipped versions back).
+
+For work on `cb` itself: `pip install -e ".[dev]"`.
 
 ## The wiki
 
@@ -213,7 +228,14 @@ cb doctor && cb identify q-0001 && cb identify q-0002
 pytest
 ```
 
-93 tests. The identification ones are golden tests against textbook DAGs with
+109 tests. The identification ones are golden tests against textbook DAGs with
 known answers — backdoor, frontdoor, IV, bow arc, M-bias — so that a DoWhy
 upgrade that changes semantics breaks the suite instead of quietly certifying an
 unanswerable question.
+
+Two tests guard the templates: one asserts the markdown is readable as package
+data (so a wheel cannot ship the code without the skills), and one asserts this
+repo's own `skills/` and `.claude/commands/cb/` still match `cb/templates/`. If
+you edit a skill in place, that second test tells you to edit the template
+instead and run `cb sync --force` — otherwise every new project would get the
+stale version.

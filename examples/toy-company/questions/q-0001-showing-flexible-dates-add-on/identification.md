@@ -11,7 +11,7 @@
 ### backdoor
 - Variables: `booking_value`, `lead_time_days`
 - Adjust for these and the backdoor paths are blocked.
-- _Unconfoundedness_: If U→{addon_shown} and U→churn_90d then P(churn_90d|addon_shown,booking_value,lead_time_days,U) = P(churn_90d|addon_shown,booking_value,lead_time_days)
+- _Unconfoundedness_: If U→{addon_shown} and U→churn_90d then P(churn_90d|addon_shown,lead_time_days,booking_value,U) = P(churn_90d|addon_shown,lead_time_days,booking_value)
 
 ### frontdoor
 - Variables: `addon_purchased`
@@ -23,4 +23,4 @@
 ### general_adjustment
 - Variables: `booking_value`, `lead_time_days`
 - A generalised adjustment set; equivalent to backdoor here.
-- _Unconfoundedness_: If U→{addon_shown} and U→churn_90d then P(churn_90d|addon_shown,booking_value,lead_time_days,U) = P(churn_90d|addon_shown,booking_value,lead_time_days)
+- _Unconfoundedness_: If U→{addon_shown} and U→churn_90d then P(churn_90d|addon_shown,lead_time_days,booking_value,U) = P(churn_90d|addon_shown,lead_time_days,booking_value)

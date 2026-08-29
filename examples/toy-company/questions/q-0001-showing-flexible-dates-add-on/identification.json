@@ -16,7 +16,7 @@
         "lead_time_days"
       ],
       "assumptions": {
-        "Unconfoundedness": "If U\u2192{addon_shown} and U\u2192churn_90d then P(churn_90d|addon_shown,booking_value,lead_time_days,U) = P(churn_90d|addon_shown,booking_value,lead_time_days)"
+        "Unconfoundedness": "If U\u2192{addon_shown} and U\u2192churn_90d then P(churn_90d|addon_shown,lead_time_days,booking_value,U) = P(churn_90d|addon_shown,lead_time_days,booking_value)"
       },
       "note": "Adjust for these and the backdoor paths are blocked."
     },
@@ -39,7 +39,7 @@
         "lead_time_days"
       ],
       "assumptions": {
-        "Unconfoundedness": "If U\u2192{addon_shown} and U\u2192churn_90d then P(churn_90d|addon_shown,booking_value,lead_time_days,U) = P(churn_90d|addon_shown,booking_value,lead_time_days)"
+        "Unconfoundedness": "If U\u2192{addon_shown} and U\u2192churn_90d then P(churn_90d|addon_shown,lead_time_days,booking_value,U) = P(churn_90d|addon_shown,lead_time_days,booking_value)"
       },
       "note": "A generalised adjustment set; equivalent to backdoor here."
     }

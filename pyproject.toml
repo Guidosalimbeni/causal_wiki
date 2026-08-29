@@ -26,6 +26,10 @@ build-backend = "setuptools.build_meta"
 [tool.setuptools.packages.find]
 include = ["cb*"]
 
+[tool.setuptools.package-data]
+# The judgement layer ships with the library; `cb init` writes it into a project.
+cb = ["templates/skills/*.md", "templates/commands/*.md"]
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 filterwarnings = ["ignore::DeprecationWarning", "ignore::FutureWarning"]
