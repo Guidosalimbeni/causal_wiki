@@ -7,6 +7,13 @@ so the tenth question is cheaper to answer than the first.
 Python, DuckDB, git, markdown. No API key — `cb` never calls an LLM. It is
 driven from Claude Code, where the judgement happens.
 
+## To install for company specific
+
+to install pip install git+https://github.com/Guidosalimbeni/causal_wiki.git
+
+in a folder/repo
+then cb init .
+
 ## The split
 
 |                                 |                                                                                       |
@@ -14,7 +21,7 @@ driven from Claude Code, where the judgement happens.
 | **`cb`** — deterministic Python | identification, the parser, the records, the notebook scaffold, validation, the index |
 | **`skills/`** — prose           | the interview, routing, critique, proposing edges, choosing methods, writing up       |
 | **`.claude/commands/cb/`**      | the actual entry points: `/cb:ingest`, `/cb:ask`, `/cb:resume`, `/cb:gaps`            |
-| **`CLAUDE.md`**                 | the project's always-on context: where things are, and the rules that do not bend      |
+| **`CLAUDE.md`**                 | the project's always-on context: where things are, and the rules that do not bend     |
 
 Both halves ship with the library. `cb init` writes the skills and slash
 commands into your project; the shipped copies live in `cb/templates/`.
