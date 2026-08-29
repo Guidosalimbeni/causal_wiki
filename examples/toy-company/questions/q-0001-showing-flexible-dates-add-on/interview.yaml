@@ -1,0 +1,54 @@
+question_id: q-0001
+posed_as: Effect of addon_shown (the impression, not the purchase) on churn_90d among
+  bookings meeting the eligibility rule, 2026 H1.
+graph: addon_uptake
+treatment:
+- addon_shown
+outcome:
+- churn_90d
+population: Bookings meeting the eligibility rule - lead time over 60 days and value
+  over GBP 800.
+period: 2026-01-01 to 2026-06-30
+turns:
+- asked: How does a booking end up seeing the add-on in the first place?
+  answered: There's a rule in the checkout config - lead time over 60 days and value
+    over 800. It's been that way since March 2024.
+  established: Assignment is deterministic on two recorded variables, so the rule is
+    the entire confounding story and both inputs are available.
+- asked: When you say "the add-on", do you mean customers who saw it or customers who
+    bought it?
+  answered: Saw it, I think. We're deciding whether to keep showing it.
+  established: Treatment is addon_shown, the impression. addon_purchased is a mediator
+    and must not be adjusted for - this is exactly what went wrong in 2025.
+- asked: Is cancelled_90d_flag filled in for every booking?
+  answered: Only once the booking is 90 days old. Recent ones read as zero.
+  established: Must filter to bookings older than 90 days or the outcome is a false
+    zero for the most recent cohort.
+- asked: Has the threshold ever been overridden manually for a customer?
+  answered: Not that I know of, but I'd want to check with the checkout team.
+  established: Open - if overrides exist, assignment is not fully deterministic.
+edges:
+- source: lead_time_days
+  target: addon_shown
+  kind: causal
+  reason: eligibility rule threshold at 60 days
+  confirmed: true
+- source: booking_value
+  target: addon_shown
+  kind: causal
+  reason: eligibility rule threshold at GBP 800
+  confirmed: true
+- source: addon_purchased
+  target: churn_90d
+  kind: causal
+  reason: flexibility lets a customer move the date rather than cancel
+  confirmed: true
+assumptions:
+- The eligibility rule did not change during 2026 H1.
+- No manual overrides of the threshold.
+open_questions:
+- Whether the checkout team ever overrode the threshold.
+wiki_gaps:
+- No node for the booking channel; unclear whether it affects both eligibility and
+  churn.
+ready: true

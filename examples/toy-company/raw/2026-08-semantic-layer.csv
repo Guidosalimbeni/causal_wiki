@@ -1,0 +1,15 @@
+table,column,type,description
+fact_booking,booking_id,string,Primary key
+fact_booking,lead_time_days,integer,Days from booking to departure (recomputed 2026-08)
+fact_booking,total_value_gbp,decimal,Total booking value including extras
+fact_booking,addon_impression_flag,boolean,Whether the flexible-dates add-on was rendered
+fact_booking,addon_purchased_flag,boolean,Whether the customer bought the add-on
+fact_booking,cancelled_90d_flag,boolean,Cancelled within 90 days of booking
+fact_booking,gross_revenue_gbp,decimal,Gross revenue recognised at booking
+dim_account,account_id,string,Primary key
+dim_account,seat_count,integer,Contracted seats
+fact_crm_activity,account_id,string,Foreign key to dim_account
+fact_crm_activity,call_flag,boolean,At least one outbound call this quarter
+fact_subscription,account_id,string,Foreign key to dim_account
+fact_subscription,upgrade_flag,boolean,Upgraded to premium during the quarter
+fact_booking,refund_amount_gbp,decimal,Refunded amount if cancelled

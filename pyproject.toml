@@ -1,0 +1,31 @@
+[project]
+name = "cb"
+version = "0.1.0"
+description = "A companion for causal analysis inside a company."
+requires-python = ">=3.11"
+dependencies = [
+    "networkx>=3.0",
+    "dowhy>=0.14",
+    "duckdb>=1.0",
+    "pyyaml>=6.0",
+    "nbformat>=5.0",
+    "typer>=0.12",
+    "pydantic>=2.0",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0"]
+
+[project.scripts]
+cb = "cb.cli:app"
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["cb*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+filterwarnings = ["ignore::DeprecationWarning", "ignore::FutureWarning"]

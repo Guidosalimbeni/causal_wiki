@@ -1,0 +1,63 @@
+{
+  "question_id": "q-0001",
+  "treatment": [
+    "addon_shown"
+  ],
+  "outcome": [
+    "churn_90d"
+  ],
+  "graph": "addon_uptake",
+  "verdict": "IDENTIFIED",
+  "strategies": [
+    {
+      "kind": "backdoor",
+      "variables": [
+        "booking_value",
+        "lead_time_days"
+      ],
+      "assumptions": {
+        "Unconfoundedness": "If U\u2192{addon_shown} and U\u2192churn_90d then P(churn_90d|addon_shown,booking_value,lead_time_days,U) = P(churn_90d|addon_shown,booking_value,lead_time_days)"
+      },
+      "note": "Adjust for these and the backdoor paths are blocked."
+    },
+    {
+      "kind": "frontdoor",
+      "variables": [
+        "addon_purchased"
+      ],
+      "assumptions": {
+        "Full-mediation": "addon_purchased intercepts (blocks) all directed paths from addon_shown to churn_90d.",
+        "First-stage-unconfoundedness": "If U\u2192{addon_shown} and U\u2192{addon_purchased} then P(addon_purchased|addon_shown,U) = P(addon_purchased|addon_shown)",
+        "Second-stage-unconfoundedness": "If U\u2192{addon_purchased} and U\u2192churn_90d then P(churn_90d|addon_purchased, addon_shown, U) = P(churn_90d|addon_purchased, addon_shown)"
+      },
+      "note": "These fully mediate the effect; estimate in two stages."
+    },
+    {
+      "kind": "general_adjustment",
+      "variables": [
+        "booking_value",
+        "lead_time_days"
+      ],
+      "assumptions": {
+        "Unconfoundedness": "If U\u2192{addon_shown} and U\u2192churn_90d then P(churn_90d|addon_shown,booking_value,lead_time_days,U) = P(churn_90d|addon_shown,booking_value,lead_time_days)"
+      },
+      "note": "A generalised adjustment set; equivalent to backdoor here."
+    }
+  ],
+  "blocking_nodes": [],
+  "design_alternative": "",
+  "provisional": false,
+  "unconfirmed_edges": [],
+  "observed": [
+    "addon_purchased",
+    "addon_shown",
+    "booking_value",
+    "churn_90d",
+    "lead_time_days"
+  ],
+  "unobserved": [],
+  "expansion": {},
+  "discarded_strategies": [],
+  "notes": [],
+  "dowhy_version": "0.14"
+}

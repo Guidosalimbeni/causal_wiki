@@ -1,0 +1,29 @@
+{
+  "question_id": "q-0003",
+  "treatment": [
+    "addon_shown"
+  ],
+  "outcome": [
+    "net_revenue"
+  ],
+  "graph": "addon_uptake",
+  "verdict": "NEEDS_EXPANSION",
+  "strategies": [],
+  "blocking_nodes": [],
+  "design_alternative": "`net_revenue` is defined as an identity over `revenue`, `churn_90d`. An identity is exactly true and carries no causal content, so the effect on it is not a causal quantity. Re-pose the question against the components listed above \u2014 ask about each separately, then recombine through the identity if a headline number is wanted.",
+  "provisional": false,
+  "unconfirmed_edges": [],
+  "observed": [],
+  "unobserved": [],
+  "expansion": {
+    "net_revenue": [
+      "revenue",
+      "churn_90d"
+    ]
+  },
+  "discarded_strategies": [],
+  "notes": [
+    "Arithmetic edges are excluded from the causal graph by construction."
+  ],
+  "dowhy_version": "0.14"
+}

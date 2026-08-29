@@ -216,3 +216,6 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# cb: derived index, rebuilt by `cb index`
+.cb/
