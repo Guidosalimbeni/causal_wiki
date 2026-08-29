@@ -9,11 +9,11 @@ driven from Claude Code, where the judgement happens.
 
 ## The split
 
-| | |
-| --- | --- |
+|                                 |                                                                                       |
+| ------------------------------- | ------------------------------------------------------------------------------------- |
 | **`cb`** — deterministic Python | identification, the parser, the records, the notebook scaffold, validation, the index |
-| **`skills/`** — prose | the interview, routing, critique, proposing edges, choosing methods, writing up |
-| **`.claude/commands/cb/`** | the actual entry points: `/cb:ingest`, `/cb:ask`, `/cb:resume`, `/cb:gaps` |
+| **`skills/`** — prose           | the interview, routing, critique, proposing edges, choosing methods, writing up       |
+| **`.claude/commands/cb/`**      | the actual entry points: `/cb:ingest`, `/cb:ask`, `/cb:resume`, `/cb:gaps`            |
 
 Both halves ship with the library. `cb init` writes the skills and slash
 commands into your project; the shipped copies live in `cb/templates/`.
@@ -76,19 +76,22 @@ them:
 ---
 id: addon_shown
 observed: true
-measured: at_quote          # before or after the treatment
+measured: at_quote # before or after the treatment
 causal_role: treatment
-graphs: [addon_uptake]      # the only source of graph membership
+graphs: [addon_uptake] # the only source of graph membership
 confirmed_by: guido
 ---
 
 ## Caused by
+
 - [[lead_time_days]] — rule threshold at 60 days <!-- cb: confirmed_by=guido confirmed_at=2026-08-29 -->
 
 ## Causes
+
 - [[churn_90d]] — hypothesised
 
 ## Computed from
+
 (arithmetic only — never enters the causal graph)
 ```
 
@@ -103,7 +106,7 @@ separate it cannot be certified as a finding.
 ## Identification
 
 The one step that is code and not judgement. An LLM asked "is this identified?"
-is usually right, and *usually* fails exactly when there is a deadline and
+is usually right, and _usually_ fails exactly when there is a deadline and
 someone wants a number.
 
 ```
@@ -143,7 +146,7 @@ Both verified against dowhy 0.14, both pinned by tests in
 2. **DoWhy will hand back an estimand that needs an unobserved variable.** On an
    M-bias graph with observed `{Z,T,Y}` it proposes the latent `U1` as an
    instrument, with a full estimand expression. Trusting `estimands['iv'] is not
-   None` would certify a design requiring a variable we have declared
+None` would certify a design requiring a variable we have declared
    unmeasurable — the exact failure this tool exists to prevent. Every strategy
    is filtered against the observed set before it counts.
 
@@ -212,7 +215,7 @@ unconfirmed edges and unobserved nodes without a source.
 ## The worked example
 
 [examples/toy-company/](examples/toy-company/) is a complete project: a travel
-company with two named graphs, an eligibility rule that *is* the confounding, an
+company with two named graphs, an eligibility rule that _is_ the confounding, an
 unobserved variable that forces a refusal, and three questions — one identified
 by backdoor adjustment, one refused, one re-posed because the outcome was an
 accounting identity.
@@ -239,3 +242,13 @@ repo's own `skills/` and `.claude/commands/cb/` still match `cb/templates/`. If
 you edit a skill in place, that second test tells you to edit the template
 instead and run `cb sync --force` — otherwise every new project would get the
 stale version.
+
+# Tl DR
+
+cb init gives you wiki/, questions/, raw/, skills/ and .claude/commands/cb/. From there:
+
+Drop things into raw/ — a semantic layer export, notes on how a process works, an old analysis writeup. Anything.
+claude, then /cb:ingest — schema exports get imported automatically; everything else I read and write into the wiki.
+Repeat 1–2 as you pick things up. No question needed yet; this is just building context.
+When a question arrives: /cb:ask "whatever they said" — and the interview starts from what the wiki already knows.
+The one thing that makes this pay off is step 3: the eligibility rules, the columns that are measured after treatment, the joins that don't work. That's the material that makes the tenth question cheap.
