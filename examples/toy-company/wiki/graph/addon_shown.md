@@ -23,3 +23,12 @@ variable the business can actually intervene on: the rule that decides it is
 
 ## Causes
 - [[addon_purchased]] — you cannot buy what you were never shown <!-- cb: confirmed_by=guido confirmed_at=2026-08-29 -->
+
+
+<!-- cb:managed name=questions sha=e07656f66909 -->
+## Questions asked here
+
+- [q-0001](../../questions/q-0001-showing-flexible-dates-add-on/question.md) — treatment · concluded · IDENTIFIED — Does showing the flexible-dates add-on actually reduce cancellations?
+  Showing the add-on reduces 90-day cancellation by about 2 percentage points.
+- [q-0003](../../questions/q-0003-what-effect-showing-add-net/question.md) — treatment · refused · NEEDS_EXPANSION — What is the effect of showing the add-on on net revenue?
+<!-- /cb:managed -->

@@ -40,9 +40,9 @@ CREATE TABLE edges (
 );
 CREATE TABLE questions (
     id TEXT PRIMARY KEY, slug TEXT, question TEXT, asked_by TEXT, asked_on TEXT,
-    status TEXT, graph TEXT, treatment TEXT, outcome TEXT, treatment_kind TEXT,
-    verdict TEXT, method TEXT, effect TEXT, finding TEXT, abandoned_reason TEXT,
-    dir TEXT
+    last_activity TEXT, status TEXT, graph TEXT, treatment TEXT, outcome TEXT,
+    treatment_kind TEXT, verdict TEXT, method TEXT, effect TEXT, finding TEXT,
+    abandoned_reason TEXT, dir TEXT
 );
 CREATE TABLE effects (
     question_id TEXT, treatment TEXT, outcome TEXT, method TEXT,
@@ -57,9 +57,36 @@ CREATE TABLE columns_ (
     status TEXT, note TEXT, path TEXT
 );
 CREATE TABLE docs (
-    kind TEXT, ref TEXT, title TEXT, text TEXT, path TEXT
+    doc_id TEXT, kind TEXT, ref TEXT, title TEXT, text TEXT, path TEXT
 );
 """
+
+
+class _Docs:
+    """Insert into `docs`, handing every row a unique id.
+
+    DuckDB's FTS index keys on one column and needs it unique: a question and
+    its interview share a `ref`, which silently broke `match_bm25` and dropped
+    every search back to the LIKE fallback. The id is what makes ranked search
+    work at all.
+    """
+
+    def __init__(self, con) -> None:
+        self.con = con
+        self.seen: set[str] = set()
+
+    def add(self, kind: str, ref: str, title: str, text: str, path) -> None:
+        doc_id = f"{kind}:{ref}"
+        if doc_id in self.seen:
+            n = 2
+            while f"{doc_id}#{n}" in self.seen:
+                n += 1
+            doc_id = f"{doc_id}#{n}"
+        self.seen.add(doc_id)
+        self.con.execute(
+            "INSERT INTO docs VALUES (?,?,?,?,?,?)",
+            [doc_id, kind, ref, title, text, str(path)],
+        )
 
 
 def _join(value) -> str:
@@ -78,10 +105,11 @@ def build(cfg: Config) -> Path:
     con = duckdb.connect(str(cfg.db))
     try:
         con.execute(SCHEMA)
+        docs = _Docs(con)
         _index_graph(con, cfg)
-        _index_questions(con, cfg)
-        _index_tables(con, cfg)
-        _index_prose(con, cfg)
+        _index_questions(con, cfg, docs)
+        _index_tables(con, cfg, docs)
+        _index_prose(con, cfg, docs)
         _index_fts(con)
     finally:
         con.close()
@@ -125,15 +153,15 @@ def _index_graph(con, cfg: Config) -> None:
         )
 
 
-def _index_questions(con, cfg: Config) -> None:
+def _index_questions(con, cfg: Config, docs: _Docs) -> None:
     for q in qmod.iter_questions(cfg.questions):
         con.execute(
-            "INSERT INTO questions VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+            "INSERT INTO questions VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
             [
-                q.id, q.slug, q.question, q.asked_by, q.asked_on, q.status.value,
-                q.graph or "", _join(q.treatment), _join(q.outcome), q.treatment_kind or "",
-                q.verdict or "", q.method or "", q.effect or "", q.finding or "",
-                q.abandoned_reason or "", str(q.dir or ""),
+                q.id, q.slug, q.question, q.asked_by, q.asked_on, q.last_activity,
+                q.status.value, q.graph or "", _join(q.treatment), _join(q.outcome),
+                q.treatment_kind or "", q.verdict or "", q.method or "", q.effect or "",
+                q.finding or "", q.abandoned_reason or "", str(q.dir or ""),
             ],
         )
         if q.verdict or q.effect or q.finding:
@@ -148,18 +176,12 @@ def _index_questions(con, cfg: Config) -> None:
                 interview = load_interview(q.interview_path)
             except Exception:
                 continue
-            con.execute(
-                "INSERT INTO docs VALUES (?,?,?,?,?)",
-                ["interview", q.id, q.question, interview.searchable_text(),
-                 str(q.interview_path)],
-            )
-        con.execute(
-            "INSERT INTO docs VALUES (?,?,?,?,?)",
-            ["question", q.id, q.question, f"{q.question}\n{q.body}", str(q.path)],
-        )
+            docs.add("interview", q.id, q.question, interview.searchable_text(),
+                     q.interview_path)
+        docs.add("question", q.id, q.question, f"{q.question}\n{q.body}", q.path)
 
 
-def _index_tables(con, cfg: Config) -> None:
+def _index_tables(con, cfg: Config, docs: _Docs) -> None:
     """Column-level causal annotations — the most valuable thing in the wiki."""
     if not cfg.tables_dir.exists():
         return
@@ -180,13 +202,10 @@ def _index_tables(con, cfg: Config) -> None:
         # Index only what a human wrote: the generated schema block is already
         # in columns_, and the boilerplate prompt would match every query.
         text = managed.human_text(doc.body).replace(ANNOTATION_PROMPT, "")
-        con.execute(
-            "INSERT INTO docs VALUES (?,?,?,?,?)",
-            ["table", table, str(doc.meta.get("label", table)), text, str(path)],
-        )
+        docs.add("table", table, str(doc.meta.get("label", table)), text, path)
 
 
-def _index_prose(con, cfg: Config) -> None:
+def _index_prose(con, cfg: Config, docs: _Docs) -> None:
     for kind, directory in (
         ("experiment", cfg.experiments_dir),
         ("process", cfg.process_dir),
@@ -202,9 +221,7 @@ def _index_prose(con, cfg: Config) -> None:
                 doc = frontmatter.Doc(meta={}, body=path.read_text(encoding="utf-8"))
             ref = str(doc.meta.get("id") or path.stem)
             title = str(doc.meta.get("label") or doc.meta.get("title") or ref)
-            con.execute(
-                "INSERT INTO docs VALUES (?,?,?,?,?)", [kind, ref, title, doc.body, str(path)]
-            )
+            docs.add(kind, ref, title, doc.body, path)
             if kind == "experiment":
                 con.execute(
                     "INSERT INTO experiments VALUES (?,?,?,?,?,?,?,?)",
@@ -223,7 +240,7 @@ def _index_fts(con) -> None:
     try:
         con.execute("INSTALL fts; LOAD fts;")
         con.execute(
-            "PRAGMA create_fts_index('docs', 'ref', 'title', 'text', overwrite=1);"
+            "PRAGMA create_fts_index('docs', 'doc_id', 'title', 'text', overwrite=1);"
         )
     except Exception:
         # FTS is a convenience; `cb find` falls back to LIKE.

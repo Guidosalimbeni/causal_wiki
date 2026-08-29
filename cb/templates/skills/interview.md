@@ -15,6 +15,11 @@ cb find "<terms>"         # past interviews and findings on this subject
 cb graph show <name>      # the edges as the parser actually reads them
 ```
 
+The prior questions in the pack are ranked — same variables first, then their
+neighbours in the graph — and the tail is counted rather than printed. If the
+count at the bottom looks like it is hiding something, `cb context <qid> --all`,
+or go at it directly with `cb find`.
+
 Read the rules and traps files that touch the subject. Arriving already knowing
 that the add-on is gated on lead time is the difference between this and a
 generic questionnaire.

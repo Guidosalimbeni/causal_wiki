@@ -19,3 +19,10 @@ confirmed_at: 2026-08-29
 
 ## Causes
 - [[upgrade_purchased]] — the question under test <!-- cb: confirmed_by=guido confirmed_at=2026-08-29 -->
+
+
+<!-- cb:managed name=questions sha=978141464aa4 -->
+## Questions asked here
+
+- [q-0002](../../questions/q-0002-outbound-rep-calls-cause-accounts/question.md) — treatment · refused · NO_CRITERION_FOUND — Do outbound rep calls cause accounts to upgrade?
+<!-- /cb:managed -->

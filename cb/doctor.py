@@ -121,6 +121,7 @@ def _check_questions(cfg: Config) -> list[Finding]:
     out: list[Finding] = []
     if not cfg.questions.exists():
         return out
+    seen: dict[str, Path] = {}
     for directory in sorted(cfg.questions.iterdir()):
         if not directory.is_dir() or not (directory / "question.md").exists():
             continue
@@ -129,6 +130,21 @@ def _check_questions(cfg: Config) -> list[Finding]:
         except Exception as exc:
             out.append(Finding("error", "question", f"{directory.name}: {exc}"))
             continue
+        # Ids are allocated as max+1 of what is on disk, so two analysts working
+        # on two branches both get the same one and the collision only appears
+        # at the merge — by which time the id is in file paths and cross
+        # references. Cheap to detect, unpleasant to unpick later.
+        if q.id in seen:
+            out.append(
+                Finding(
+                    "error",
+                    "duplicate-question-id",
+                    f"{q.id} is used by both {seen[q.id].name} and {directory.name}. "
+                    f"Renumber one — every reference to it is ambiguous until you do.",
+                )
+            )
+        else:
+            seen[q.id] = directory
         if q.status is qmod.Status.ABANDONED and not (q.abandoned_reason or "").strip():
             out.append(
                 Finding("error", "abandoned-without-reason", f"{q.id}: no abandoned_reason")

@@ -17,3 +17,10 @@ confirmed_at: 2026-08-29
 - [[rep_call_made]] <!-- cb: confirmed_by=guido confirmed_at=2026-08-29 -->
 - [[account_size]] <!-- cb: confirmed_by=guido confirmed_at=2026-08-29 -->
 - [[sales_rep_effort]] <!-- cb: confirmed_by=guido confirmed_at=2026-08-29 -->
+
+
+<!-- cb:managed name=questions sha=81d35796ff52 -->
+## Questions asked here
+
+- [q-0002](../../questions/q-0002-outbound-rep-calls-cause-accounts/question.md) — outcome · refused · NO_CRITERION_FOUND — Do outbound rep calls cause accounts to upgrade?
+<!-- /cb:managed -->

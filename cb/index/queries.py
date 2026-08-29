@@ -2,10 +2,16 @@
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass
 from pathlib import Path
 
 from ..config import Config
+
+# A question neither concluded nor abandoned is normal for a fortnight; past
+# that it has been forgotten. Ageing is what keeps this gap readable once
+# several analysts each have work in flight.
+STALLED_AFTER_DAYS = 14
 
 
 @dataclass
@@ -67,9 +73,15 @@ GAP_QUERIES: list[tuple[str, str, str]] = [
     ),
     (
         "stalled-question",
-        "Neither concluded nor abandoned. Either finish it or record why it was dropped.",
-        """SELECT id, question || '  [' || status || ']'
-           FROM questions WHERE status NOT IN ('concluded','abandoned') ORDER BY id""",
+        f"Untouched for over {STALLED_AFTER_DAYS} days and neither concluded nor abandoned. "
+        f"Either finish it or record why it was dropped.",
+        f"""SELECT id, question || '  [' || status || ', last touched '
+                     || substr(last_activity, 1, 10) || ']'
+           FROM questions
+           WHERE status NOT IN ('concluded','abandoned')
+             AND substr(last_activity, 1, 10)
+                 < CAST(current_date - INTERVAL {STALLED_AFTER_DAYS} DAY AS VARCHAR)
+           ORDER BY last_activity""",
     ),
     (
         "question-without-interview",
@@ -109,7 +121,7 @@ def find(cfg: Config, query: str, limit: int = 20) -> list[tuple[str, str, str, 
             con.execute("LOAD fts;")
             rows = con.execute(
                 """SELECT kind, ref, title, path FROM (
-                       SELECT *, fts_main_docs.match_bm25(ref, ?) AS score FROM docs
+                       SELECT *, fts_main_docs.match_bm25(doc_id, ?) AS score FROM docs
                    ) WHERE score IS NOT NULL ORDER BY score DESC LIMIT ?""",
                 [query, limit],
             ).fetchall()
@@ -117,15 +129,29 @@ def find(cfg: Config, query: str, limit: int = 20) -> list[tuple[str, str, str, 
                 return [tuple(str(c) for c in r) for r in rows]  # type: ignore[misc]
         except Exception:
             pass
-        # Fallback when the FTS extension is unavailable offline.
-        rows = con.execute(
-            """SELECT kind, ref, title, path FROM docs
-               WHERE lower(text) LIKE lower(?) OR lower(title) LIKE lower(?) LIMIT ?""",
-            [f"%{query}%", f"%{query}%", limit],
-        ).fetchall()
-        return [tuple(str(c) for c in r) for r in rows]  # type: ignore[misc]
+        return _find_without_fts(con, query, limit)
     finally:
         con.close()
+
+
+def _find_without_fts(con, query: str, limit: int) -> list[tuple[str, str, str, str]]:
+    """Fallback when the FTS extension cannot be loaded — offline, usually.
+
+    Scored per term rather than matched as one literal string: a two-word query
+    is the common case, and a LIKE on the whole phrase finds nothing unless the
+    words happen to be adjacent.
+    """
+    terms = [t for t in re.findall(r"[\w'-]+", query.lower()) if len(t) > 1] or [query.lower()]
+    score = " + ".join(
+        "CASE WHEN lower(title || ' ' || text) LIKE ? THEN 1 ELSE 0 END" for _ in terms
+    )
+    rows = con.execute(
+        f"""SELECT kind, ref, title, path FROM (
+                SELECT kind, ref, title, path, {score} AS hits FROM docs
+            ) WHERE hits > 0 ORDER BY hits DESC, ref LIMIT ?""",
+        [*(f"%{t}%" for t in terms), limit],
+    ).fetchall()
+    return [tuple(str(c) for c in r) for r in rows]  # type: ignore[misc]
 
 
 def query(cfg: Config, sql: str) -> tuple[list[str], list[tuple]]:

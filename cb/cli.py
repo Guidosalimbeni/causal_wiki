@@ -14,6 +14,7 @@ from pathlib import Path
 
 import typer
 
+from . import context as context_mod
 from . import doctor as doctor_mod
 from . import ingest as ingest_mod
 from . import templates as templates_mod
@@ -24,6 +25,7 @@ from .index import queries
 from .notebook import scaffold
 from .records import question as qmod
 from .records import result as result_mod
+from .wiki import backlinks as backlinks_mod
 from .wiki import graph as wikigraph
 
 app = typer.Typer(add_completion=False, help=__doc__, no_args_is_help=True)
@@ -150,8 +152,23 @@ def ask(
 ) -> None:
     """Open a question record. The interview happens in Claude Code, not here."""
     c = cfg()
+    already = context_mod.similar_questions(c, question)
     q = qmod.create(c.questions, question, asked_by=asked_by, graph=graph)
     echo(f"{q.id}  {q.dir.relative_to(c.root)}")  # type: ignore[union-attr]
+
+    # Cheap, and it catches the failure a wiki exists to prevent: the same
+    # question answered twice, months apart, by two different people.
+    if already:
+        echo()
+        echo("This looks close to something already asked:")
+        for prior, overlap in already:
+            line = f"  {prior.id} [{prior.status.value}] {prior.question}"
+            if prior.verdict:
+                line += f" — {prior.verdict}"
+            echo(line)
+            if prior.finding:
+                echo(f"      {prior.finding}")
+        echo("  Read it first — it may already answer this, or say why it could not.")
     echo()
     echo("Next: read the wiki and interview the analyst (skills/interview.md).")
     echo(f"Save the interview to {q.interview_path.relative_to(c.root)}, then run:")
@@ -159,7 +176,11 @@ def ask(
 
 
 @app.command()
-def context(qid: str = typer.Argument(..., help="Question id.")) -> None:
+def context(
+    qid: str = typer.Argument(..., help="Question id."),
+    limit: int = typer.Option(12, "--limit", help="How many prior questions to show."),
+    all_: bool = typer.Option(False, "--all", help="Every prior question, unranked cap lifted."),
+) -> None:
     """Print the wiki context pack for a question, so Claude need not grep blind."""
     c = cfg()
     try:
@@ -174,6 +195,7 @@ def context(qid: str = typer.Argument(..., help="Question id.")) -> None:
         echo(f"treatment: {', '.join(q.treatment)}    outcome: {', '.join(q.outcome)}")
     echo()
 
+    wiki = None
     if c.graph_dir.exists():
         wiki = wikigraph.load(c.graph_dir)
         echo(f"## Graphs ({len(wiki.nodes)} nodes)")
@@ -201,16 +223,35 @@ def context(qid: str = typer.Argument(..., help="Question id.")) -> None:
                 echo(f"- {f.relative_to(c.root)}")
             echo()
 
-    prior = [p for p in qmod.iter_questions(c.questions) if p.id != q.id]
-    if prior:
-        echo("## Prior questions")
-        for p in prior:
-            line = f"- {p.id} [{p.status.value}] {p.question}"
-            if p.verdict:
-                line += f" — {p.verdict}"
-            echo(line)
-        echo()
+    _echo_priors(c, q, wiki, limit=None if all_ else limit)
     echo("Search past interviews with: cb find \"<terms>\"")
+
+
+def _echo_priors(c: Config, q, wiki, limit: int | None) -> None:
+    """Prior questions, most relevant first.
+
+    An unranked dump was fine at twenty questions and useless at three hundred:
+    the ones that bear on this question have to be at the top, or the pack stops
+    being read.
+    """
+    ranked = context_mod.rank_priors(c, q, wiki)
+    if not ranked:
+        return
+    shown = ranked if limit is None else ranked[:limit]
+    echo(f"## Prior questions ({len(shown)} of {len(ranked)}, most relevant first)")
+    for r in shown:
+        p = r.question
+        line = f"- {p.id} [{p.status.value}] {p.question}"
+        if p.verdict:
+            line += f" — {p.verdict}"
+        echo(line)
+        if r.reason:
+            echo(f"    ↳ {r.reason}")
+    if len(ranked) > len(shown):
+        rest = len(ranked) - len(shown)
+        echo(f"- …and {rest} more, less related. `cb context {q.id} --all`, "
+             f"or search them with `cb find`.")
+    echo()
 
 
 # -- stage three-and-a-half: identification -----------------------------------
@@ -336,13 +377,26 @@ def result_add(
 
 
 @app.command("index")
-def index_cmd() -> None:
+def index_cmd(
+    backlinks: bool = typer.Option(
+        True, "--backlinks/--no-backlinks",
+        help="Also refresh the 'Questions asked here' block on each node file.",
+    ),
+) -> None:
     """Rebuild the DuckDB index from the wiki. Derived, disposable, never authoritative."""
     c = cfg()
     path = index_build.build(c)
     counts = queries.summary(c)
     echo(f"rebuilt {path.relative_to(c.root)}")
     echo("  " + "  ".join(f"{k}={v}" for k, v in counts.items()))
+
+    # The database is disposable; this is not. It is a generated region inside a
+    # file a human owns, which is why it goes through `managed` and why it is
+    # written here — so the backlinks can never drift from the records.
+    if backlinks and c.graph_dir.exists():
+        changed = backlinks_mod.update(c, wikigraph.load(c.graph_dir))
+        if changed:
+            echo(f"  backlinks refreshed on {len(changed)} node file(s)")
 
 
 @app.command()
@@ -457,18 +511,53 @@ def graph_show(
 
 
 @app.command()
-def status() -> None:
-    """Where every question stands."""
+def status(
+    status_: list[str] = typer.Option(
+        None, "--status", help="Only these statuses. Repeatable."
+    ),
+    asked_by: str = typer.Option("", "--asked-by", help="Only what this person asked."),
+    since: str = typer.Option("", "--since", help="Only touched on or after this ISO date."),
+    all_: bool = typer.Option(False, "--all", help="Include concluded and abandoned too."),
+) -> None:
+    """Where every open question stands.
+
+    Closed questions are counted rather than listed: past a hundred of them the
+    list is an archive, and the archive is what `cb find` is for.
+    """
     c = cfg()
     rows = list(qmod.iter_questions(c.questions))
     if not rows:
         echo("no questions yet — start with: cb ask \"<what they asked>\"")
         return
+
+    wanted = {s.lower() for s in (status_ or [])}
+    closed = 0
+    shown = []
     for q in rows:
-        line = f"{q.id}  {q.status.value:13s} {q.question}"
+        if wanted:
+            if q.status.value not in wanted:
+                continue
+        elif not all_ and q.status in qmod.TERMINAL:
+            closed += 1
+            continue
+        if asked_by and q.asked_by != asked_by:
+            continue
+        if since and q.last_activity[:10] < since:
+            continue
+        shown.append(q)
+
+    shown.sort(key=lambda q: q.last_activity, reverse=True)
+    for q in shown:
+        line = f"{q.id}  {q.last_activity[:10]}  {q.status.value:13s} {q.question}"
         if q.verdict:
             line += f"  [{q.verdict}]"
         echo(line)
+
+    if not shown:
+        echo("nothing matches")
+    if closed:
+        echo()
+        echo(f"{closed} concluded or abandoned, not shown. `cb status --all` for everything.")
 
 
 def main() -> None:

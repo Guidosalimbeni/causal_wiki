@@ -13,6 +13,10 @@ acting; they are prose and they are meant to be edited.
 - `skills/` — routing, interview, critique, edges, methods, writeup.
 - `.cb/` — derived DuckDB index. Disposable, rebuilt by `cb index`.
 
+A node file's `## Questions asked here` block is generated between
+`<!-- cb:managed -->` markers and rewritten by `cb index`. Everything outside
+the markers is mine to write; edits inside are lost on the next rebuild.
+
 ## Entry points
 
 `/cb:ingest` read `raw/` into the wiki · `/cb:ask "<question>"` a question arrived ·

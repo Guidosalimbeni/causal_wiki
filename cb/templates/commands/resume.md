@@ -4,7 +4,7 @@ description: Pick a question back up where it was left.
 
 Question: **$ARGUMENTS** (if no id was given, run `cb status` and ask which one)
 
-1. `cb status` — where everything stands.
+1. `cb status` — what is open, freshest first (`--all` includes closed ones).
 2. `cb context <qid>` — the wiki as it now is.
 3. Read `questions/<qid>/`: `question.md`, `interview.yaml`, `log.md`, and
    `identification.md` if it exists, plus anything under `results/`.

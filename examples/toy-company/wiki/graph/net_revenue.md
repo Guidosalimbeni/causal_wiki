@@ -23,3 +23,10 @@ certifying the arithmetic as a finding.
 ## Computed from
 - [[revenue]] <!-- cb: confirmed_by=guido confirmed_at=2026-08-29 -->
 - [[churn_90d]] <!-- cb: confirmed_by=guido confirmed_at=2026-08-29 -->
+
+
+<!-- cb:managed name=questions sha=5a5234712449 -->
+## Questions asked here
+
+- [q-0003](../../questions/q-0003-what-effect-showing-add-net/question.md) — outcome · refused · NEEDS_EXPANSION — What is the effect of showing the add-on on net revenue?
+<!-- /cb:managed -->

@@ -25,6 +25,8 @@ from pydantic import BaseModel, Field, model_validator
 from ..wiki import frontmatter
 
 ID_RE = re.compile(r"^q-(\d{4})")
+# `- `2026-08-29T15:45:14` **stage**` — the line `stamp()` writes.
+_LOG_STAMP = re.compile(r"^-\s+`(?P<when>\d{4}-\d{2}-\d{2}[T \d:]*)`")
 
 
 class Status(str, Enum):
@@ -112,6 +114,37 @@ class Question(BaseModel):
     @property
     def log_path(self) -> Path:
         return Path(self.dir) / "log.md"  # type: ignore[arg-type]
+
+    # -- ageing --------------------------------------------------------------
+
+    @property
+    def last_activity(self) -> str:
+        """When this question was last touched.
+
+        Read from the log rather than the file mtime, which a fresh clone or a
+        checkout resets. It is what lets `cb gaps` age a stalled question out
+        instead of listing everything still in flight — with several analysts
+        asking daily, "not yet concluded" is the normal state, and a gap that
+        fires on all of them is one nobody reads.
+        """
+        path = self.log_path
+        if path.exists():
+            stamps = [
+                m.group("when")
+                for m in (
+                    _LOG_STAMP.match(line)
+                    for line in path.read_text(encoding="utf-8").splitlines()
+                )
+                if m
+            ]
+            if stamps:
+                return max(stamps)
+        return self.asked_on
+
+    @property
+    def nodes(self) -> set[str]:
+        """The graph nodes this question is about — how relevance is judged."""
+        return {n for n in (*self.treatment, *self.outcome) if n}
 
     # -- io ------------------------------------------------------------------
 

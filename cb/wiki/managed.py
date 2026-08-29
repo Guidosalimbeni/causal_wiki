@@ -74,6 +74,20 @@ def replace(text: str, content: str, name: str = "default", **attrs: str) -> str
     return f"{text.rstrip()}{separator}\n{block}\n" if text.strip() else f"{block}\n"
 
 
+def remove(text: str, name: str = "default") -> str:
+    """Drop one managed region, leaving every other byte alone.
+
+    A generated section that has nothing to say should disappear rather than
+    stand there empty — an empty block in every file is noise in the wiki and
+    churn in the diff.
+    """
+    for region in find(text):
+        if region.name == name:
+            cut = text[: region.start].rstrip() + "\n" + text[region.end :].lstrip("\n")
+            return cut
+    return text
+
+
 def human_text(text: str) -> str:
     """Everything outside the managed regions — what ingest must preserve."""
     return _REGION.sub("", text)

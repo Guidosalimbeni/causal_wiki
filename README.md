@@ -191,6 +191,39 @@ approaches have failed for this kind of treatment" is a query, not a read.
 No embeddings: they would need an API key, and DuckDB's FTS plus grep is ample
 at this scale.
 
+## At three hundred questions
+
+A question a day across a few analysts is a few hundred records inside a year,
+and that is the size this is built for rather than a size it survives.
+
+It works because the two halves grow differently. Questions grow with the
+asking: one directory each, forever, and nobody browses them. The wiki does
+not — the tenth churn question adds a record but still only one `churn_90d.md`,
+so the thing people actually read stays roughly the size it is now. Everything
+learned is deduplicated into the concept, and the question record keeps only
+what was found.
+
+Which makes the archive a retrieval problem, and retrieval is the index's job,
+not the directory tree's:
+
+```bash
+cb status                     # what is open, freshest first; --all for the archive
+cb find "add-on churn"        # ranked, and the terms need not sit next to each other
+cb context <qid>              # priors ranked by shared variables, tail counted
+```
+
+`cb ask` says so when the question has been asked before. `cb gaps` ages a
+stalled question out after a fortnight, because with several analysts at work
+"not yet concluded" is the normal state and a gap that fires on all of them is
+one nobody reads.
+
+The last piece is the way back. `cb index` writes a `## Questions asked here`
+block onto each node file — generated, inside `<!-- cb:managed -->` markers, so
+the prose around it is untouched. Browsing `churn_90d.md` in Obsidian then shows
+the variable, why it reads as a false zero under 90 days, and every question
+that ever turned on it. That is the difference between an archive and a wiki:
+you navigate from the concept, and never have to open `questions/` at all.
+
 ## Validation
 
 ```bash
