@@ -14,6 +14,7 @@ driven from Claude Code, where the judgement happens.
 | **`cb`** — deterministic Python | identification, the parser, the records, the notebook scaffold, validation, the index |
 | **`skills/`** — prose           | the interview, routing, critique, proposing edges, choosing methods, writing up       |
 | **`.claude/commands/cb/`**      | the actual entry points: `/cb:ingest`, `/cb:ask`, `/cb:resume`, `/cb:gaps`            |
+| **`CLAUDE.md`**                 | the project's always-on context: where things are, and the rules that do not bend      |
 
 Both halves ship with the library. `cb init` writes the skills and slash
 commands into your project; the shipped copies live in `cb/templates/`.
@@ -45,11 +46,13 @@ python3 -m venv .venv
 .venv/bin/cb init .
 ```
 
-`cb init` creates the wiki skeleton **and** writes out `skills/` and
-`.claude/commands/cb/`, so the slash commands work immediately. It never
+`cb init` creates the wiki skeleton **and** writes out `CLAUDE.md`, `skills/` and
+`.claude/commands/cb/`, so the slash commands work immediately — restart Claude
+Code if it was already running, as it discovers commands at startup. It never
 overwrites a skill you have edited — the skills are meant to be changed. After
-upgrading `cb`, `cb sync` pulls in any new or changed templates, again leaving
-your edits alone (`--force` if you want the shipped versions back).
+upgrading `cb`, `cb sync` pulls in any new or changed skills and commands, again
+leaving your edits alone (`--force` if you want the shipped versions back).
+`sync` never touches `CLAUDE.md` — that one is yours the moment it is written.
 
 For work on `cb` itself: `pip install -e ".[dev]"`.
 
@@ -245,7 +248,7 @@ stale version.
 
 # Tl DR
 
-cb init gives you wiki/, questions/, raw/, skills/ and .claude/commands/cb/. From there:
+cb init gives you wiki/, questions/, raw/, skills/, CLAUDE.md and .claude/commands/cb/. From there:
 
 Drop things into raw/ — a semantic layer export, notes on how a process works, an old analysis writeup. Anything.
 claude, then /cb:ingest — schema exports get imported automatically; everything else I read and write into the wiki.

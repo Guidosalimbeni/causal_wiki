@@ -26,12 +26,15 @@ class TestMaterialise:
         assert (project / "skills" / "interview.md").exists()
         assert (project / ".claude" / "commands" / "cb" / "ask.md").exists()
 
+    def test_it_writes_the_project_claude_md(self, project):
+        """The always-on context a fresh project needs before any command runs."""
+        templates.materialise(project)
+        assert (project / "CLAUDE.md").exists()
+
     def test_everything_shipped_lands(self, project):
         written = templates.materialise(project)
         assert {w.action for w in written} == {"created"}
-        assert len(written) == len(templates._templates("skills")) + len(
-            templates._templates("commands")
-        )
+        assert len(written) == sum(len(templates._templates(g)) for g in templates.DESTINATIONS)
 
     def test_running_twice_changes_nothing(self, project):
         templates.materialise(project)
@@ -64,6 +67,16 @@ class TestMaterialise:
         written = templates.materialise(project, force=True)
         assert all(w.action == "unchanged" for w in written)
 
+    def test_sync_never_takes_back_a_projects_claude_md(self, project):
+        """CLAUDE.md is scaffolding the project owns — `sync --force` must not reclaim it."""
+        templates.materialise(project)
+        (project / "CLAUDE.md").write_text("my own house rules\n")
+
+        written = templates.materialise(project, force=True, groups=templates.SYNCED)
+
+        assert (project / "CLAUDE.md").read_text() == "my own house rules\n"
+        assert not any(w.path.name == "CLAUDE.md" for w in written)
+
     def test_a_single_group_can_be_written(self, project):
         templates.materialise(project, groups=[templates.SKILLS])
         assert (project / "skills" / "interview.md").exists()
@@ -71,7 +84,7 @@ class TestMaterialise:
 
     def test_templates_are_readable_as_package_data(self):
         """Guards against a wheel that ships the code but not the markdown."""
-        for group in (templates.SKILLS, templates.COMMANDS):
+        for group in templates.DESTINATIONS:
             found = templates._templates(group)
             assert found, f"no {group} templates found in the installed package"
             assert all(text.strip() for _, text in found)
@@ -82,6 +95,10 @@ class TestNoDrift:
 
     If you edit one in place, the shipped version silently falls behind and
     every new project gets the stale one. Edit `cb/templates/` instead.
+
+    `PROJECT` is deliberately not checked: this repo's own CLAUDE.md is about
+    working on `cb`, not about running a wiki, so it is meant to differ from
+    the one shipped to projects.
     """
 
     @pytest.mark.parametrize("group", [templates.SKILLS, templates.COMMANDS])

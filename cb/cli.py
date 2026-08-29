@@ -84,7 +84,9 @@ def sync(
 ) -> None:
     """Refresh the shipped skills and slash commands after upgrading cb."""
     c = cfg()
-    _report_templates(templates_mod.materialise(c.root, force=force))
+    _report_templates(
+        templates_mod.materialise(c.root, force=force, groups=templates_mod.SYNCED)
+    )
 
 
 def _report_templates(written: list) -> None:

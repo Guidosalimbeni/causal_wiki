@@ -18,12 +18,19 @@ from pathlib import Path
 
 SKILLS = "skills"
 COMMANDS = "commands"
+PROJECT = "project"
 
 # Where each set of templates lands, relative to the project root.
 DESTINATIONS = {
     SKILLS: Path("skills"),
     COMMANDS: Path(".claude") / "commands" / "cb",
+    PROJECT: Path("."),
 }
+
+# `cb sync` refreshes the judgement layer after an upgrade. It leaves the
+# scaffold alone: CLAUDE.md is a project's own always-on context, so a later
+# `sync --force` must not be able to take it back.
+SYNCED = [SKILLS, COMMANDS]
 
 
 @dataclass
@@ -51,7 +58,7 @@ def _templates(group: str) -> list[tuple[str, str]]:
 
 
 def materialise(root: Path, force: bool = False, groups: list[str] | None = None) -> list[Written]:
-    """Write the shipped skills and slash commands into a project."""
+    """Write the shipped skills, slash commands and scaffold into a project."""
     out: list[Written] = []
     for group in groups or list(DESTINATIONS):
         target_dir = Path(root) / DESTINATIONS[group]
