@@ -4,6 +4,13 @@ Judgement lives here, not in `cb`. Causal inference is a huge field and Claude
 knows more of it than could sensibly be encoded, so these are prose instructions
 rather than a fixed menu of methods or question types.
 
+Where a skill names methods it is illustrating a distinction, never bounding the
+options. The only closed list in this tool is what `cb identify` returns, and
+that is DoWhy's vocabulary for *identification* — not a statement about which
+estimators exist, and not a view on designs whose assumptions a DAG cannot
+express. Act as the expert; the notes in `wiki/methods/` are what this company
+has learned on top of that, and they are the part worth reading twice.
+
 `cb` owns only what must be deterministic: identification, the parser, the
 records, the notebook scaffold, validation, and the index.
 

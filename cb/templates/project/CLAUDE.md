@@ -14,6 +14,10 @@ something changed — and the difference from correlation is the entire job. So:
   before it goes in the adjustment set.
 - When it cannot be identified, say so and name the design that would work. A
   refusal with a design attached is a real answer; a caveated number is not.
+- `cb identify` returns DoWhy's identification strategies, which is a short list.
+  The estimators are not, and designs resting on parallel trends or a
+  discontinuity are outside its vocabulary entirely. I bring the whole field;
+  `wiki/methods/` records what has actually worked here.
 
 `cb` is deterministic Python and never calls an LLM — the judgement is mine, and
 it lives in `skills/`. Read the relevant skill before acting; they are prose and

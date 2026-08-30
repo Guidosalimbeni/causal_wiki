@@ -42,7 +42,8 @@ CREATE TABLE questions (
     id TEXT PRIMARY KEY, slug TEXT, question TEXT, asked_by TEXT, asked_on TEXT,
     last_activity TEXT, status TEXT, graph TEXT, treatment TEXT, outcome TEXT,
     treatment_kind TEXT, verdict TEXT, method TEXT, method_note TEXT, effect TEXT,
-    finding TEXT, abandoned_reason TEXT, dir TEXT
+    finding TEXT, abandoned_reason TEXT, design TEXT, design_status TEXT,
+    experiment TEXT, dir TEXT
 );
 CREATE TABLE effects (
     question_id TEXT, treatment TEXT, outcome TEXT, method TEXT,
@@ -160,13 +161,15 @@ def _index_questions(con, cfg: Config, docs: _Docs) -> None:
         # than in SQL so "estimated with something nobody wrote up" is one query.
         note = methods_mod.match(notes, q.method or "")
         con.execute(
-            "INSERT INTO questions VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+            "INSERT INTO questions VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
             [
                 q.id, q.slug, q.question, q.asked_by, q.asked_on, q.last_activity,
                 q.status.value, q.graph or "", _join(q.treatment), _join(q.outcome),
                 q.treatment_kind or "", q.verdict or "", q.method or "",
                 note.id if note else "", q.effect or "", q.finding or "",
-                q.abandoned_reason or "", str(q.dir or ""),
+                q.abandoned_reason or "", q.design or "",
+                q.design_status.value if q.design_status else "", q.experiment or "",
+                str(q.dir or ""),
             ],
         )
         if q.verdict or q.effect or q.finding:

@@ -34,6 +34,35 @@ DuckDB index can answer questions across everything ever asked. Set
 `treatment_kind` too — it is what makes "which approaches have failed for this
 kind of treatment" answerable.
 
+## Say what would confirm it
+
+Every write-up ends with the design that would test the finding independently —
+including, especially, the ones that came back clean. An observational estimate
+rests on the adjustment argument being right, and the only thing that does not
+is randomisation.
+
+This is an offer, not a demand. One or two sentences: what would be randomised,
+on what unit, and what it would settle that this cannot. If the analyst wants it
+worked up, `cb notebook new <qid> --design` and record it:
+
+```yaml
+design: 10% holdout of eligible accounts for six weeks
+design_status: proposed
+```
+
+## If the answer was a design rather than a number
+
+A refusal proposes a design; recording it is what stops the proposal
+evaporating. Put it on the question record with `design_status: proposed`, so
+`cb gaps` keeps it visible until someone runs it, declines it, or the question
+is abandoned with a reason.
+
+When it does run, write it up in `wiki/experiments/<slug>.md` — what was
+randomised, on whom, and what it found — then set `experiment:` and
+`design_status: ran` on the question. `cb doctor` checks the note exists. The
+standing lessons about how this company runs tests go in `wiki/methods/`, not
+in the experiment note: how it was randomised *here* outlives this one test.
+
 ## The runs that failed
 
 A notebook that errored, a method that did not converge, an estimate too

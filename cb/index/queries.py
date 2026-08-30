@@ -91,6 +91,26 @@ GAP_QUERIES: list[tuple[str, str, str]] = [
            ORDER BY q.id""",
     ),
     (
+        "refusal-without-a-design",
+        "Refused, and no design recorded on the record. The identification report already "
+        "proposes one — decide which, and put it on the question so it can be picked up.",
+        """SELECT id, question || '  [' || verdict || ']'
+           FROM questions
+           WHERE COALESCE(verdict,'') NOT IN ('', 'IDENTIFIED')
+             AND COALESCE(design,'') = ''
+           ORDER BY id""",
+    ),
+    (
+        "design-waiting",
+        "An experiment was proposed and has not come back. This is where a refusal quietly "
+        "becomes a dead end after all.",
+        """SELECT id, design || '  [' || design_status || ', since '
+                     || substr(last_activity, 1, 10) || ']'
+           FROM questions
+           WHERE design_status IN ('proposed','agreed','running')
+           ORDER BY last_activity""",
+    ),
+    (
         "method-without-a-note",
         "Estimated with, but nothing in wiki/methods/ says how it had to be tailored here. "
         "The textbook is not the missing part; the local shape of it is.",

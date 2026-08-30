@@ -41,8 +41,8 @@ The [[2025-q3-addon-holdout]] experiment found 1.8pp by randomisation against
 comparison is the main reason to keep trusting this one.
 
 
-<!-- cb:managed name=questions sha=e6d42ff56e37 -->
-## Questions that used this
+<!-- cb:managed name=questions sha=2dbf1ae25a21 -->
+## Questions that reached for this
 
 - [q-0001](../../questions/q-0001-showing-flexible-dates-add-on/question.md) — `backdoor.propensity_score_weighting` — concluded · IDENTIFIED — Does showing the flexible-dates add-on actually reduce cancellations?
   Showing the add-on reduces 90-day cancellation by about 2 percentage points.

@@ -344,6 +344,12 @@ def identify(
 def notebook_new(
     qid: str = typer.Argument(...),
     name: str = typer.Option(None, "--name"),
+    design: bool = typer.Option(
+        False, "--design",
+        help="Scaffold an experiment design instead of an analysis. Works whatever "
+             "the verdict was — as the answer when nothing else recovers the effect, "
+             "or as confirmation when something did.",
+    ),
 ) -> None:
     """Scaffold a notebook carrying the identification verdict."""
     c = cfg()
@@ -358,6 +364,16 @@ def notebook_new(
         from .identify.report import Report
 
         report = Report(**json.loads(q.identification_path.read_text(encoding="utf-8")))
+
+    if design:
+        path = scaffold.design(q, report=report, name=name)
+        echo(f"wrote {path.relative_to(c.root)}")
+        echo()
+        echo("Fill in the parameters with the analyst, then record the design:")
+        echo(f"  design: <what would be run>       in questions/{q.dir.name}/question.md")
+        echo("  design_status: proposed")
+        echo("`cb gaps` will keep it visible until it comes back or is declined.")
+        return
 
     path = scaffold.build(q, report=report, name=name)
     if q.status in (qmod.Status.IDENTIFIED, qmod.Status.REFUSED):
@@ -478,40 +494,37 @@ def sql(statement: str = typer.Argument(..., help="Read-only SQL over the index.
 
 @app.command()
 def methods() -> None:
-    """What this company has estimated with before, and how often.
+    """What this company has estimated with and tested with before.
 
     The textbook is already in the model. This is the local record: which of
-    them survived contact with this business, and which were tried with nothing
-    written down about how they had to be bent.
+    them survived contact with this business, and which were reached for with
+    nothing written down about how they had to be bent.
     """
     c = cfg()
     notes = methods_mod.load(c)
-    questions = [q for q in qmod.iter_questions(c.questions) if q.method]
-
-    used: dict[str, list] = {}
-    unwritten: dict[str, list] = {}
-    for q in questions:
-        note = methods_mod.match(notes, q.method or "")
-        if note:
-            used.setdefault(note.id, []).append(q)
-        else:
-            unwritten.setdefault(q.method or "", []).append(q)
+    used = methods_mod.usage(c, notes)
 
     if notes:
         echo("## Written up")
         for note in notes:
-            ids = ", ".join(q.id for q in sorted(used.get(note.id, []), key=lambda q: q.id))
-            echo(f"  {note.id:34s} {len(used.get(note.id, [])):2d}  {ids or '—'}")
+            uses = used.get(note.id, [])
+            marks = ", ".join(
+                f"{u.question.id}{'*' if u.role == 'design' else ''}" for u in uses
+            )
+            echo(f"  {note.id:34s} {len(uses):2d}  {marks or '—'}")
+        if any(u.role == "design" for uses in used.values() for u in uses):
+            echo("  * proposed as a design rather than used as an estimator")
     else:
         echo(f"nothing in {c.methods_dir.relative_to(c.root)} yet")
 
-    if unwritten:
+    missing = methods_mod.unwritten(c, notes)
+    if missing:
         echo()
-        echo("## Used but never written up")
-        for method, qs in sorted(unwritten.items()):
-            echo(f"  {method:34s} {len(qs):2d}  {', '.join(q.id for q in qs)}")
+        echo("## Reached for but never written up")
+        for recorded, qs in sorted(missing.items()):
+            echo(f"  {recorded[:60]:60s} {', '.join(q.id for q in qs)}")
         echo()
-        echo("Each of these was tailored to this business somehow. Write that down in "
+        echo("Each was tailored to this business somehow. Write that down in "
              f"{c.methods_dir.relative_to(c.root)}/ — skills/methods.md has the shape.")
 
 
@@ -608,6 +621,8 @@ def status(
         line = f"{q.id}  {q.last_activity[:10]}  {q.status.value:13s} {q.question}"
         if q.verdict:
             line += f"  [{q.verdict}]"
+        if q.design_status:
+            line += f"  [experiment {q.design_status.value}]"
         echo(line)
 
     if not shown:

@@ -150,25 +150,37 @@ def _propose_design(
             f"No backdoor, frontdoor or instrumental-variable strategy over the observed "
             f"variables recovers the effect of {t} on {y}."
         )
-    lines.append("Designs that would work, in rough order of cost:")
+
+    designs = []
     if blocking:
-        lines.append(
-            f"1. **Measure {named}.** If a proxy exists in the warehouse, add it as a node "
+        designs.append(
+            f"**Measure {named}.** If a proxy exists in the warehouse, add it as a node "
             f"and re-run — a good proxy may close the path."
         )
-    lines.append(
-        f"{'2' if blocking else '1'}. **Randomise {t}.** An experiment removes every backdoor "
-        f"path by construction and is the only design that needs no further assumptions."
+    designs.append(
+        f"**Randomise {t}.** An experiment removes every backdoor path by construction "
+        f"and is the only design that needs no further assumptions. "
+        f"`cb notebook new <qid> --design` scaffolds one."
     )
-    lines.append(
-        f"{'3' if blocking else '2'}. **Find an instrument** — something that shifts {t}, is "
-        f"unrelated to {y} except through {t}, and is already recorded. A policy threshold, a "
-        f"rollout date or a capacity constraint is often one."
+    designs.append(
+        f"**Find an instrument** — something that shifts {t}, is unrelated to {y} except "
+        f"through {t}, and is already recorded. A policy threshold, a rollout date or a "
+        f"capacity constraint is often one."
     )
-    lines.append(
-        f"{'4' if blocking else '3'}. **Find a full mediator** — a measured variable that carries "
-        f"the entire effect of {t} on {y}, which makes a frontdoor argument available."
+    designs.append(
+        f"**Find a full mediator** — a measured variable that carries the entire effect "
+        f"of {t} on {y}, which makes a frontdoor argument available."
     )
+    designs.append(
+        "**Use a design whose assumptions this graph cannot express.** Difference-in-"
+        "differences, synthetic control, a regression discontinuity at a policy cutoff, "
+        "an interrupted time series: these rest on parallel trends or continuity, not on "
+        "conditional independence, so nothing above was ever a test of them. This verdict "
+        "is about graph-based criteria over the observed nodes and says nothing against "
+        "them — argue the assumption on its merits with the analyst instead."
+    )
+    lines.append("Designs that would work, in rough order of cost:")
+    lines += [f"{i}. {d}" for i, d in enumerate(designs, start=1)]
     return "\n".join(lines)
 
 

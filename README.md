@@ -73,16 +73,28 @@ wiki/
   graph/         one file per variable — the causal graph
   rules/         business rules — these decide who gets treated
   process/       how the business actually works, in prose
-  methods/       how this company estimates things — the local tailoring
+  methods/       how this company estimates *and tests* things — the tailoring
   experiments/   what was tried and what it found
   traps/         mistakes that keep getting made here
 ```
 
 ### `methods/` holds the tailoring, not the textbook
 
-IV, DiD, synthetic control, interrupted time series — the model already knows
-all of them, and restating them here would be the least useful thing this wiki
-could hold. What is nowhere in its training is how each had to be bent to fit
+Both halves of the craft live here: ways of estimating from data that exists —
+weighting, DML, causal forests, uplift models, DiD, synthetic control,
+discontinuities, interrupted time series — and ways of *creating* it, which is to
+say designs: A/B tests, holdouts, switchbacks, stepped-wedge rollouts, bandits.
+A design is a method.
+
+Nothing in `cb` constrains that list. `cb identify` returns DoWhy's
+*identification* strategies — backdoor, frontdoor, IV, general adjustment — which
+is a short list because it is one library's vocabulary for what licenses an
+estimate, not a menu of estimators and not a view on designs that rest on
+parallel trends or continuity rather than conditional independence. The skills
+say so explicitly, and a refusal names it as one of the routes out.
+
+The model already knows all of them, and restating them here would be the least
+useful thing this wiki could hold. What is nowhere in its training is how each had to be bent to fit
 *this* business: which instrument survived scrutiny, which window the billing
 cycle forces, why the obvious cohort definition is unavailable, what broke last
 time.
@@ -95,10 +107,43 @@ the fourth question to use it is where it gets good.
 cb methods    # what has been used here, how often, and what was never written up
 ```
 
-`cb index` lists the questions that used each note on the note itself, and
-`cb gaps` reports a method used with nothing written down about it. Kept
+`cb index` lists the questions that reached for each note on the note itself,
+and `cb gaps` reports a method used with nothing written down about it. Kept
 separate from `experiments/`, which records one thing that was run and what it
 found — a claim with a date on it, rather than standing guidance.
+
+## Experiments are an answer, not a fallback
+
+Randomisation is the one design that rests on no untestable assumption, so it
+stays on the table whatever `cb identify` said:
+
+```bash
+cb notebook new <qid> --design
+```
+
+Power and the sample size the MDE actually costs, deterministic assignment, the
+SRM and balance checks that catch a broken test, and an analysis plan written
+before the data exists. It works in all three situations that call for one — as
+**the answer** when nothing observational recovers the effect and the refusal
+has already named it; on **request**, because "give me a design instead" is a
+causal question in its own right and is never met with a refusal; and as
+**confirmation** when an estimate did come out, since two designs with different
+assumptions agreeing is worth more than either alone.
+
+None of which survives being said once in a conversation, so it goes on the
+record:
+
+```yaml
+design: 10% account-level holdout, rep calls suppressed for six weeks
+design_status: proposed    # proposed | agreed | running | ran | declined
+experiment: 2026-q1-rep-call-holdout   # required once it has run
+```
+
+The schema refuses a status with no design, and refuses `ran` without the
+experiment note it produced. `cb gaps` reports designs still waiting and
+refusals that named none; `cb doctor` catches an experiment recorded but never
+written up. A design proposed and then quietly forgotten is the same dead end
+the refusal was meant to avoid, one step further along.
 
 ### The graph lives in the wiki, one file per node
 

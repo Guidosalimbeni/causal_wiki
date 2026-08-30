@@ -43,6 +43,24 @@ class Status(str, Enum):
 TERMINAL = {Status.CONCLUDED, Status.ABANDONED}
 
 
+class DesignStatus(str, Enum):
+    """Where a proposed experiment stands.
+
+    A design named in a refusal and then forgotten is the same dead end the
+    refusal was supposed to avoid, one step further along. Tracking it is what
+    turns "randomise it" from a sentence into work someone can pick up.
+    """
+
+    PROPOSED = "proposed"
+    AGREED = "agreed"
+    RUNNING = "running"
+    RAN = "ran"
+    DECLINED = "declined"
+
+
+OPEN_DESIGNS = {DesignStatus.PROPOSED, DesignStatus.AGREED, DesignStatus.RUNNING}
+
+
 def today() -> str:
     return _dt.date.today().isoformat()
 
@@ -71,6 +89,11 @@ class Question(BaseModel):
     verdict: str | None = None
     method: str | None = None
     treatment_kind: str | None = None
+
+    # An experiment: proposed instead of an answer, or alongside one.
+    design: str | None = None
+    design_status: DesignStatus | None = None
+    experiment: str | None = None
     effect: str | None = None
     finding: str | None = None
     abandoned_reason: str | None = None
@@ -79,6 +102,20 @@ class Question(BaseModel):
     dir: Path | None = None
 
     model_config = {"arbitrary_types_allowed": True}
+
+    @model_validator(mode="after")
+    def _a_design_status_needs_a_design(self) -> "Question":
+        if self.design_status and not (self.design or "").strip():
+            raise ValueError(
+                f"design_status '{self.design_status.value}' with no design — "
+                "say what would be run, not just that something would be"
+            )
+        if self.design_status is DesignStatus.RAN and not (self.experiment or "").strip():
+            raise ValueError(
+                "design_status 'ran' requires experiment: the slug of the "
+                "wiki/experiments/ note recording what it found"
+            )
+        return self
 
     @model_validator(mode="after")
     def _abandoning_requires_a_reason(self) -> "Question":

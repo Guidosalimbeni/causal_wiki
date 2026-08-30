@@ -23,7 +23,7 @@ from .graph import Wiki
 
 REGION = "questions"
 HEADING = "## Questions asked here"
-METHOD_HEADING = "## Questions that used this"
+METHOD_HEADING = "## Questions that reached for this"
 
 
 def _line(node_id: str, q: qmod.Question, from_dir: Path) -> str:
@@ -49,12 +49,15 @@ def render(node_id: str, questions: list[qmod.Question], from_dir: Path) -> str:
     return f"{HEADING}\n\n{body}"
 
 
-def _method_line(q: qmod.Question, from_dir: Path) -> str:
+def _method_line(use, from_dir: Path) -> str:
+    q = use.question
     target = os.path.relpath(q.path, from_dir).replace(os.sep, "/")
     parts = [q.status.value]
-    if q.verdict:
+    if use.role == "design":
+        parts.insert(0, f"design {q.design_status.value if q.design_status else 'proposed'}")
+    elif q.verdict:
         parts.append(q.verdict)
-    line = f"- [{q.id}]({target}) — `{q.method}` — {' · '.join(parts)} — {q.question}"
+    line = f"- [{q.id}]({target}) — `{use.recorded[:80]}` — {' · '.join(parts)} — {q.question}"
     if q.finding:
         line += f"\n  {q.finding}"
     return line
@@ -74,32 +77,29 @@ def _write(path: Path, content: str | None) -> bool:
 
 
 def update_methods(cfg: Config) -> list[Path]:
-    """List, on each method note, the questions estimated with it.
+    """List, on each note, the questions that reached for it.
 
     Which is the point of the folder: "what have we used for this kind of
     treatment before, and how did it have to be bent" is the first thing worth
     knowing in an interview, and it is unanswerable if the note and the
-    questions never point at each other.
+    questions never point at each other. A design proposed counts as reaching
+    for it — otherwise a standing test design reads as unused until someone
+    finally runs one.
     """
     notes = methods_mod.load(cfg)
     if not notes:
         return []
-    used: dict[str, list[qmod.Question]] = {}
-    for q in qmod.iter_questions(cfg.questions):
-        note = methods_mod.match(notes, q.method or "")
-        if note:
-            used.setdefault(note.id, []).append(q)
+    used = methods_mod.usage(cfg, notes)
 
     changed: list[Path] = []
     for note in notes:
         if note.path is None:
             continue
-        questions = sorted(used.get(note.id, []), key=lambda q: q.id)
+        uses = used.get(note.id, [])
         content = (
-            METHOD_HEADING
-            + "\n\n"
-            + "\n".join(_method_line(q, note.path.parent) for q in questions)
-            if questions
+            METHOD_HEADING + "\n\n"
+            + "\n".join(_method_line(u, note.path.parent) for u in uses)
+            if uses
             else None
         )
         if _write(note.path, content):

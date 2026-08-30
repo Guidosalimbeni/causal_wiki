@@ -25,6 +25,25 @@ Read the rules, traps and method notes that touch the subject. Arriving already 
 that the add-on is gated on lead time is the difference between this and a
 generic questionnaire.
 
+## Ask early whether an experiment is possible
+
+Before the graph decides what is answerable, find out what is *allowed*:
+
+- Could this be randomised at all — is there a lever the business controls?
+- What unit could be assigned: a user, an account, a rep, a region, a week?
+- Has anything like it been randomised here before? `cb methods` and
+  `wiki/experiments/` say so.
+- Who would have to agree, and how long would they wait?
+
+The answer changes what counts as an answer. If randomisation is available, a
+weak observational design is the wrong recommendation even when it identifies.
+If it is impossible — a price change nobody will risk, a treatment already given
+to everyone — then say so now, because a refusal whose only proposal is "run an
+experiment" is a dead end when an experiment was never on the table.
+
+Record what they say. It is the single most useful thing in an interview and it
+is never written down anywhere else.
+
 ## What you are working towards
 
 Three things, in this order:

@@ -50,5 +50,10 @@ Anything after is a mediator or a collider, never a control. See
 Restate the question in one sentence naming treatment, outcome, population and
 period. If the analyst does not recognise it, you have not got it yet.
 
+Also say whether the question could be settled by running something. "How
+should we design a test for this" is a causal question in its own right and
+arrives as often as "does X cause Y" — it goes through the same interview and
+comes out as `cb notebook new <qid> --design`, not as a refusal.
+
 Never respond to a badly-posed question by arguing it was ill-posed and
 stopping. Re-pose it, offer the nearest answerable version, and carry on.

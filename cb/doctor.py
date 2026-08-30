@@ -171,6 +171,19 @@ def _check_questions(cfg: Config) -> list[Finding]:
             out.append(
                 Finding("error", "abandoned-without-reason", f"{q.id}: no abandoned_reason")
             )
+        # A design recorded as run must point at what it found, or the loop that
+        # made the experiment worth proposing never actually closed.
+        if q.experiment:
+            note = cfg.experiments_dir / f"{q.experiment}.md"
+            if not note.exists():
+                out.append(
+                    Finding(
+                        "error",
+                        "dangling-experiment",
+                        f"{q.id} records experiment '{q.experiment}', but there is no "
+                        f"{note.relative_to(cfg.root)}. Write up what it found.",
+                    )
+                )
         if q.verdict and q.verdict != "IDENTIFIED" and q.status is qmod.Status.CONCLUDED:
             out.append(
                 Finding(

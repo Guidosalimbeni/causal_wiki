@@ -53,6 +53,17 @@ This is code, not judgement. Do not talk yourself past its verdict.
   would work.** The report already names it. Write it up (`skills/writeup.md`)
   and offer the design. A refusal is a real finding, not a failure.
 
+A design is a route through this flow, not an exit from it:
+
+```
+cb notebook new <qid> --design
+```
+
+Use it when the refusal names an experiment, when the analyst asks for one
+outright, or when an identified finding deserves confirmation. Then record
+`design:` and `design_status:` on the question record so `cb gaps` keeps it
+visible until it comes back.
+
 If the verdict comes back `provisional`, tell the analyst which edges are
 unconfirmed and get them confirmed.
 
@@ -79,6 +90,8 @@ was learned (`skills/writeup.md`), then `cb index`.
 
 - Never dead-end. If the analyst asks for something unfamiliar, try it or hand
   over a notebook. Never argue the question was ill-posed instead of answering.
+- "Give me an experiment design instead" is always a valid answer to give and a
+  valid request to receive, whatever `cb identify` said.
 - Everything ends recorded, including questions abandoned and notebooks that
   failed. Those are the useful ones.
 - A notebook run outside and brought back is completed work, not an error.

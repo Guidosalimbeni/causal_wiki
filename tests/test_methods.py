@@ -106,7 +106,7 @@ class TestUsage:
             )
         )
         out = cb("methods", cwd=project)
-        assert "Used but never written up" in out
+        assert "Reached for but never written up" in out
         assert "difference_in_differences" in out
 
     def test_and_shows_up_as_a_gap(self, project):
@@ -130,9 +130,9 @@ class TestMethodBacklinks:
     def test_the_note_lists_what_used_it(self, project):
         cb("index", cwd=project)
         text = (project / "wiki" / "methods" / "propensity-score-weighting.md").read_text()
-        assert "## Questions that used this" in text
+        assert "## Questions that reached for this" in text
         assert "q-0001" in text
-        assert "backdoor.propensity_score_weighting" in text.split("## Questions that used")[1]
+        assert "backdoor.propensity_score_weighting" in text.split("## Questions that reached for")[1]
 
     def test_the_human_prose_survives(self, project):
         cb("index", cwd=project)
@@ -156,7 +156,7 @@ class TestMethodBacklinks:
         )
         cb("index", cwd=project)
         text = (project / "wiki" / "methods" / "propensity-score-weighting.md").read_text()
-        assert "Questions that used this" not in text
+        assert "Questions that reached for this" not in text
 
 
 class TestStandingContext:

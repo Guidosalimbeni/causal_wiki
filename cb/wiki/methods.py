@@ -19,6 +19,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 from ..config import Config
+from ..records import question as qmod
 from . import frontmatter
 
 
@@ -85,3 +86,46 @@ def match(methods: list[Method], recorded: str) -> Method | None:
             if _contains(words, needle) and (best is None or len(needle) > best[0]):
                 best = (len(needle), method)
     return best[1] if best else None
+
+
+@dataclass
+class Use:
+    """One question that reached for this note, and in which capacity."""
+
+    question: "qmod.Question"
+    role: str  # "estimated" | "design"
+
+    @property
+    def recorded(self) -> str:
+        return (self.question.method if self.role == "estimated" else self.question.design) or ""
+
+
+def usage(cfg: Config, notes: list[Method] | None = None) -> dict[str, list[Use]]:
+    """Which questions each note covers, keyed by note id.
+
+    A note is reached for in two ways and both count: as the estimator a
+    question was answered with, and as the design a question proposed. Counting
+    only the first would show a company's standing test design as unused right
+    up until someone ran one.
+    """
+    notes = load(cfg) if notes is None else notes
+    out: dict[str, list[Use]] = {}
+    for q in qmod.iter_questions(cfg.questions):
+        for role, recorded in (("estimated", q.method), ("design", q.design)):
+            note = match(notes, recorded or "")
+            if note:
+                out.setdefault(note.id, []).append(Use(question=q, role=role))
+    for uses in out.values():
+        uses.sort(key=lambda u: u.question.id)
+    return out
+
+
+def unwritten(cfg: Config, notes: list[Method] | None = None) -> dict[str, list]:
+    """Methods and designs on record with no note explaining the local shape."""
+    notes = load(cfg) if notes is None else notes
+    out: dict[str, list] = {}
+    for q in qmod.iter_questions(cfg.questions):
+        for recorded in (q.method, q.design):
+            if recorded and not match(notes, recorded):
+                out.setdefault(recorded, []).append(q)
+    return out
